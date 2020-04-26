@@ -1,6 +1,8 @@
 #ifndef TRIANGLE_H
 #define TRIANGLE_H
 
+#include "vec3.h"
+
 struct face {
     int a;
     int b;
