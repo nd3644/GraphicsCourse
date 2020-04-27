@@ -78,6 +78,36 @@ class App : public Eternal::Application {
             return newVec;
         }
 
+        void DrawLine(int x0, int y0, int x2, int y2) {
+            int delta_x = x2 - x0;
+            int delta_y = y2 - y0;
+
+            int side_length = (abs(delta_x) > abs(delta_y)) ? abs(delta_x) : abs(delta_y);
+
+            float xinc = delta_x / (float)side_length;
+            float yinc = delta_y / (float)side_length;
+
+            float x = x0;
+            float y = y0;
+            myRenderer->SetColor(0,0,1,1);
+            for(int i = 0;i < side_length;i++) {
+                myRenderer->PlotPoint((int)x,(int)y);
+                x += xinc;
+                y += yinc;
+            }
+        }
+
+        void DrawTriangle(triangle t) {
+            DrawLine(t.points[0].x, t.points[0].y, 
+                                    t.points[1].x, t.points[1].y);
+
+            DrawLine(t.points[1].x, t.points[1].y, 
+                                    t.points[2].x, t.points[2].y);
+
+            DrawLine(t.points[0].x, t.points[0].y, 
+                                t.points[2].x, t.points[2].y);
+        }
+
         void OnInitialize() {
             int i = 0;
             for(float x = -1;x <= 1;x += 0.25) {
@@ -164,9 +194,12 @@ class App : public Eternal::Application {
             myRenderer->SetColor(1,1,0,1);
             for(int i = 0;i < N_MESH_FACES;i++) {
                 triangle t = triangles_to_render[i];
-                myRenderer->PlotPoint(t.points[0].x, t.points[0].y);
+/*                myRenderer->PlotPoint(t.points[0].x, t.points[0].y);
                 myRenderer->PlotPoint(t.points[1].x, t.points[1].y);
-                myRenderer->PlotPoint(t.points[2].x, t.points[2].y);
+                myRenderer->PlotPoint(t.points[2].x, t.points[2].y);*/
+
+                DrawTriangle(t);
+
             }
         }
 
