@@ -1,14 +1,16 @@
 #include <iostream>
+#include <vector>
 #include <application.h>
 #include "vec3.h"
 #include "triangle.h"
+#include "mesh.h"
 
 float FOV_FACTOR = 128.0;
 
 const int WINDOW_W = 320;
 const int WINDOW_H = 240;
 
-const int N_MESH_VERTICES = 8;
+const int N_CUBE_VERTICES = 8;
 /*vec3 mesh_vertices[N_MESH_VERTICES] = { 
     {-1, -1, -1}, // 0
     {-1,  1, -1}, // 1
@@ -21,7 +23,7 @@ const int N_MESH_VERTICES = 8;
     { 1, -1, 1}   // 7
 };*/
 
-vec3 mesh_vertices[N_MESH_VERTICES] = {
+vec3 cube_vertices[N_CUBE_VERTICES] = {
     { .x = -1, .y = -1, .z = -1 }, // 1
     { .x = -1, .y =  1, .z = -1 }, // 2
     { .x =  1, .y =  1, .z = -1 }, // 3
@@ -32,8 +34,8 @@ vec3 mesh_vertices[N_MESH_VERTICES] = {
     { .x = -1, .y = -1, .z =  1 }  // 8
 };
 
-const int N_MESH_FACES = 6 * 2;
-face mesh_faces[N_MESH_FACES] = {
+const int N_CUBE_FACES = 6 * 2;
+face cube_faces[N_CUBE_FACES] = {
     // front
     { .a = 1, .b = 2, .c = 3 },
     { .a = 1, .b = 3, .c = 4 },
@@ -54,7 +56,7 @@ face mesh_faces[N_MESH_FACES] = {
     { .a = 6, .b = 1, .c = 4 }
 };
 
-triangle triangles_to_render[N_MESH_FACES];
+std::vector<triangle>triangles_to_render;
 
 class App : public Eternal::Application {
     public:
@@ -62,7 +64,7 @@ class App : public Eternal::Application {
         vec3 cube_points[NUM_POINTS];
         vec3 projected_points[NUM_POINTS];
         vec3 vCamera = { 0, 0, -5 };
-        vec3 cube_rotation = { 0, 0, 0 };
+        mesh myMesh;
 
         App() {
         }
@@ -108,37 +110,43 @@ class App : public Eternal::Application {
                                 t.points[2].x, t.points[2].y);
         }
 
-        void OnInitialize() {
-            int i = 0;
-            for(float x = -1;x <= 1;x += 0.25) {
-                for(float y = -1;y <= 1;y += 0.25) {
-                    for(float z = -1;z <= 1;z += 0.25) {
-                        vec3 new_point = { x, y, z };
-                        cube_points[i].x = x;
-                        cube_points[i].y = y;
-                        cube_points[i].z = z;
-                        i++;
-                    }
-                }
+        void load_cube_data() {
+            for(int i = 0;i < N_CUBE_FACES;i++) {
+                myMesh.faces.push_back(cube_faces[i]);
+            }
+            for(int i = 0;i < N_CUBE_VERTICES;i++) {
+                myMesh.verts.push_back(cube_vertices[i]);
             }
         }
 
-        void OnUpdate() {
+        void OnInitialize() {
+            load_cube_data();
+        }
 
-            for(int i = 0;i < N_MESH_FACES;i++) {
-                face mesh_face = mesh_faces[i];
+        void OnUpdate() {
+            myMesh.rotation.x += 0.01f;
+            myMesh.rotation.y += 0.01f;
+            myMesh.rotation.z += 0.01f;
+
+            if(myInputHandle->IsKeyTap(Eternal::InputHandle::KEY_ESCAPE)) {
+                exit(0);
+            }
+
+            for(int i = 0;i < myMesh.faces.size();i++) {
+                face mesh_face = myMesh.faces[i];
 
                 vec3 face_verts[3];
-                face_verts[0] = mesh_vertices[mesh_face.a-1];
-                face_verts[1] = mesh_vertices[mesh_face.b-1];
-                face_verts[2] = mesh_vertices[mesh_face.c-1];
+                face_verts[0] = myMesh.verts[mesh_face.a-1];
+                face_verts[1] = myMesh.verts[mesh_face.b-1];
+                face_verts[2] = myMesh.verts[mesh_face.c-1];
 
                 triangle t;
                 for(int j = 0;j < 3;j++) {
                     vec3 point = face_verts[j];
-                    point = vec3_rotate_x(point, cube_rotation.x);
-                    point = vec3_rotate_y(point, cube_rotation.y);
-                    point = vec3_rotate_z(point, cube_rotation.z);
+
+                    point = vec3_rotate_x(point, myMesh.rotation.x);
+                    point = vec3_rotate_y(point, myMesh.rotation.y);
+                    point = vec3_rotate_z(point, myMesh.rotation.z);
 
                     point.z -= vCamera.z;
 
@@ -148,20 +156,9 @@ class App : public Eternal::Application {
 
                     t.points[j] = point;
                 }
-                triangles_to_render[i] = t;
+                triangles_to_render.push_back(t);
 
             }
-
-/*            for(int i = 0; i < NUM_POINTS;i++) {
-                vec3 point = cube_points[i];
-
-                point = vec3_rotate_y(point, cube_rotation.y);
-                point = vec3_rotate_x(point, cube_rotation.x);
-                point = vec3_rotate_z(point, cube_rotation.z);
-                point.z -= vCamera.z;
-
-                projected_points[i] = Project(point);
-            }*/
         }
 
         void OnDraw() {
@@ -170,9 +167,7 @@ class App : public Eternal::Application {
                 FOV_FACTOR -= 0.5f;
             }
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_RIGHT)) {
-                cube_rotation.y += 0.01f;
-                cube_rotation.x += 0.01f;
-                cube_rotation.z == 0.01f;
+
             }
 
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_UP)) {
@@ -182,9 +177,6 @@ class App : public Eternal::Application {
                 y++;
             }
 
-            for(int i = 0;i < N_MESH_FACES;i++) {
-
-            }
 /*            myRenderer->SetColor(1,1,1,1);
             for(int i = 0; i < NUM_POINTS;i++) {
                 myRenderer->SetColor(((float)(rand() % 255) / 255), ((float)(rand() % 255) / 255) , ((float)(rand() % 255) / 255), 1); 
@@ -192,15 +184,15 @@ class App : public Eternal::Application {
             }*/
 
             myRenderer->SetColor(1,1,0,1);
-            for(int i = 0;i < N_MESH_FACES;i++) {
+            for(int i = 0;i < triangles_to_render.size();i++) {
                 triangle t = triangles_to_render[i];
 /*                myRenderer->PlotPoint(t.points[0].x, t.points[0].y);
                 myRenderer->PlotPoint(t.points[1].x, t.points[1].y);
                 myRenderer->PlotPoint(t.points[2].x, t.points[2].y);*/
 
                 DrawTriangle(t);
-
             }
+            triangles_to_render.clear();
         }
 
 
