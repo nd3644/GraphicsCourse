@@ -121,6 +121,7 @@ class App : public Eternal::Application {
 
         void OnInitialize() {
             load_cube_data();
+            load_obj("data/cube.obj", myMesh);
         }
 
         void OnUpdate() {
@@ -164,7 +165,7 @@ class App : public Eternal::Application {
         void OnDraw() {
             static float x = 0,y = 0;
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_LEFT)) {
-                FOV_FACTOR -= 0.5f;
+                FOV_FACTOR += 5.0f;
             }
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_RIGHT)) {
 
@@ -186,9 +187,6 @@ class App : public Eternal::Application {
             myRenderer->SetColor(1,1,0,1);
             for(int i = 0;i < triangles_to_render.size();i++) {
                 triangle t = triangles_to_render[i];
-/*                myRenderer->PlotPoint(t.points[0].x, t.points[0].y);
-                myRenderer->PlotPoint(t.points[1].x, t.points[1].y);
-                myRenderer->PlotPoint(t.points[2].x, t.points[2].y);*/
 
                 DrawTriangle(t);
             }
