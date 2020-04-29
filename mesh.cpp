@@ -2,6 +2,29 @@
 #include <iostream>
 #include <sstream>
 
+// helper function to determine if face is defined i/i/i or i//i
+bool obj_contain_double_slash(std::string sLine) {
+    for(int i = 0;i < sLine.size();i++) {
+        if(sLine[i] == '/' && sLine.size() < i + 1) {
+            if(sLine[i+1] == '/') {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+int obj_count_slashes(std::string sLine) {
+    int count = 0;
+    for(int i = 0;i < sLine.size();i++) {
+        if(sLine[i] == '/') {
+            count++;
+        }
+    }
+    std::cout << "count :" << count << std::endl;
+    return count;
+}
+
 void load_obj(std::string sfilename, mesh &myMesh) {
     myMesh.verts.clear();
     myMesh.faces.clear();
@@ -27,7 +50,19 @@ void load_obj(std::string sfilename, mesh &myMesh) {
         }
         else if(tmp == "f") {
             int i = 0;
-            std::sscanf(sLine.c_str(), "f %d/%d %d/%d %d/%d", &f.a, &i, &f.b, &i, &f.c, &i);
+            
+/*            if(obj_count_slashes(sLine) == 0) {
+                ss >> f.a;
+                ss >> f.b;
+                ss >> f.c;
+            }*/
+
+      //      else if(obj_contain_double_slash(sLine)) {
+     //           std::sscanf(sLine.c_str(), "f %d//%d %d//%d %d//%d", &f.a, &i, &f.b, &i, &f.c, &i);
+   //         }
+ //           else {
+                std::sscanf(sLine.c_str(), "f %d/%d %d/%d %d/%d", &f.a, &i, &f.b, &i, &f.c, &i);
+//            }
             std::cout << f.a << " , " << f.b << " , " << f.c << std::endl;
             myMesh.faces.push_back(f);
         }

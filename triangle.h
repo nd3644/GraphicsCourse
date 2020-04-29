@@ -1,7 +1,7 @@
 #ifndef TRIANGLE_H
 #define TRIANGLE_H
 
-#include "vec3.h"
+#include "vec.h"
 
 struct face {
     int a;

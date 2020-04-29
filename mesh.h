@@ -1,7 +1,7 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "vec3.h"
+#include "vec.h"
 #include "triangle.h"
 #include <vector>
 #include <string>

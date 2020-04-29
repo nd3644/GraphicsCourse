@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <application.h>
-#include "vec3.h"
+#include "vec.h"
 #include "triangle.h"
 #include "mesh.h"
 
@@ -122,6 +122,12 @@ class App : public Eternal::Application {
         void OnInitialize() {
             load_cube_data();
             load_obj("data/cube.obj", myMesh);
+
+            vec3 a = { 2.5, 6.4, 3.0 };
+            vec3 b = { -2.2, 1.4, -1.0 };
+
+            std::cout << "a: " << vec3_length(a) << std::endl;
+            std::cout << "b: " << vec3_length(b) << std::endl;
         }
 
         void OnUpdate() {
