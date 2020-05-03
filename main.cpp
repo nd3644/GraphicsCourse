@@ -5,7 +5,7 @@
 #include "triangle.h"
 #include "mesh.h"
 
-float FOV_FACTOR = 128.0;
+float FOV_FACTOR = 640.0;
 
 const int WINDOW_W = 320;
 const int WINDOW_H = 240;
@@ -63,7 +63,7 @@ class App : public Eternal::Application {
         static const int NUM_POINTS = 9*9*9;
         vec3 cube_points[NUM_POINTS];
         vec3 projected_points[NUM_POINTS];
-        vec3 vCamera = { 0, 0, -5 };
+        vec3 vCamera = { 0, 0, -20 };
         mesh myMesh;
 
         App() {
@@ -77,6 +77,7 @@ class App : public Eternal::Application {
                             ((FOV_FACTOR * v.x) + 0) / v.z,
                             ((FOV_FACTOR * v.y) + 0) / v.z,
                             0 };
+
             return newVec;
         }
 
@@ -99,15 +100,11 @@ class App : public Eternal::Application {
             }
         }
 
+
         void DrawTriangle(triangle t) {
-            DrawLine(t.points[0].x, t.points[0].y, 
-                                    t.points[1].x, t.points[1].y);
+            myRenderer->SetColor(0,0,1,1);
 
-            DrawLine(t.points[1].x, t.points[1].y, 
-                                    t.points[2].x, t.points[2].y);
-
-            DrawLine(t.points[0].x, t.points[0].y, 
-                                t.points[2].x, t.points[2].y);
+            DrawFilledTriangle(t.points[0].x, t.points[0].y,t.points[1].x, t.points[1].y,t.points[2].x, t.points[2].y);
         }
 
         void load_cube_data() {
@@ -131,9 +128,6 @@ class App : public Eternal::Application {
         }
 
         void OnUpdate() {
-            myMesh.rotation.x += 0.01f;
-            myMesh.rotation.y += 0.01f;
-            myMesh.rotation.z += 0.01f;
 
             if(myInputHandle->IsKeyTap(Eternal::InputHandle::KEY_ESCAPE)) {
                 exit(0);
@@ -148,6 +142,7 @@ class App : public Eternal::Application {
                 face_verts[2] = myMesh.verts[mesh_face.c-1];
 
                 triangle t;
+                vec3 transformed_verts[3];  
                 for(int j = 0;j < 3;j++) {
                     vec3 point = face_verts[j];
 
@@ -157,32 +152,180 @@ class App : public Eternal::Application {
 
                     point.z -= vCamera.z;
 
+                    transformed_verts[j] = point;
+                }
+
+                vec3 ba = vec3_sub(transformed_verts[1], transformed_verts[0]);
+                ba = vec3_normalize(ba);
+                vec3 ca = vec3_sub(transformed_verts[2], transformed_verts[0]);
+                ca = vec3_normalize(ca);
+
+                vec3 n = vec3_cross(ba, ca);
+                n = vec3_normalize(n);
+                t.n = n;
+
+                vec3 camera_ray = vec3_sub(vCamera, transformed_verts[0]);
+                if(vec3_dot(camera_ray, n) < 0) {
+                    continue;
+                }
+
+                for(int j = 0;j < 3;j++) {
+                    vec3 point = transformed_verts[j];
+
                     point = Project(point);
                     point.x += WINDOW_W / 2;
                     point.y += WINDOW_H / 2;
 
                     t.points[j] = point;
                 }
+                t.n = Project(t.n);
+                t.n.x += WINDOW_W / 2;
+                t.n.y += WINDOW_H / 2;
                 triangles_to_render.push_back(t);
-
             }
         }
 
+        float GetLineSlope(float x, float y, float x1, float y1) {
+            float delta_x = x - x1;
+            float delta_y = y - y1;
+
+            return delta_x / delta_y;
+        }
+
+        void fill_flat_bottom(float x0, float y0, float x1, float y1, float x2, float y2) {
+            float slope1 = GetLineSlope(x2,y2,x0,y0);
+            float slope2 = GetLineSlope(x1,y1,x0,y0);
+
+            float startX = x0;
+            float endX = x0;
+            myRenderer->SetColor(0,0,1,1);
+            for(int y = y0;y <= y2;y++) {
+                DrawLine(startX, y, endX, y);
+                startX += slope1;
+                endX += slope2;
+            }
+        }
+
+        void fill_flat_top(float x0, float y0, float x1, float y1, float x2, float y2) {
+            float slope1 =  GetLineSlope(x2,y2,x0,y0);
+            float slope2 = GetLineSlope(x2,y2, x1, y1);
+
+            float startX = x2;
+            float endX = x2;
+            myRenderer->SetColor(0,0,1,1);
+            for(int y = y2;y >= y0;y--) {
+                DrawLine(startX, y, endX, y);
+                startX -= slope1;
+                endX -= slope2;
+            }
+
+        }
+
+        void DrawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2) {
+            if(y0 > y1) {
+                std::swap(y0, y1);
+                std::swap(x0, x1);
+            }
+
+            if(y1 > y2) {
+                std::swap(y1, y2);
+                std::swap(x1, x2);
+            }
+
+            if(y0 > y1) {
+                std::swap(y0, y1);
+                std::swap(x0, x1);
+            }
+
+            if(y1 == y2) {
+                fill_flat_bottom(x0, y0, x1, y1, x2, y2);
+                return;
+            }
+            if(y0 == y1) {
+                fill_flat_top(x0, y0, x1, y1, x2, y2);
+                return;
+            }
+
+            int mY = y1;
+            int mX = (((x2 - x0) * (y1 - y0)) / (y2 - y0)) + x0;
+
+            fill_flat_bottom(x0, y0, x1, y1, mX, mY);
+            fill_flat_top(x1, y1, mX, mY, x2, y2);
+
+/*            myRenderer->SetColor(1,1,1,1);
+            myRenderer->DrawLine(x0, y0, x1, y1);
+            myRenderer->DrawLine(x0, y0, x2, y2);
+            myRenderer->DrawLine(x1, y1, x2, y2);
+
+            myRenderer->SetColor(1,0,0,1);
+            myRenderer->PlotPoint(x0, y0);
+
+            myRenderer->SetColor(0,1,0,1);
+            myRenderer->PlotPoint(x1, y1);
+
+            myRenderer->SetColor(0,0,1,1);
+            myRenderer->PlotPoint(x2, y2);*/
+
+
+        }
+
         void OnDraw() {
+
+            vec3 poots[3] = { { 32, 0 } , { 64, 100 }, {0, 64} }; 
+
+            static float fx = 300;
+            static float fy = 300;
+
+            static float r = 0;
+            for(int i = 0;i < 3;i++ ){
+                poots[i] = vec3_rotate_z(poots[i], r);
+                poots[i].x += fx;
+                poots[i].y += fy;
+            }
+
+            DrawFilledTriangle((int)poots[0].x, (int)poots[0].y, (int)poots[1].x, (int)poots[1].y, (int)poots[2].x, (int)poots[2].y); 
+
+            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_LEFT)) {
+                fx--;
+            }
+
+            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_RIGHT)) {
+                fx++;
+            }
+
+            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_UP)) {
+                fy--;
+            }
+
+            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_DOWN)) {
+                fy++;
+            }
+
+            if(myInputHandle->IsKeyDown(Eternal::InputHandle::BUTTON_A)) {
+                r += 0.01f;
+            }
+
+            if(myInputHandle->IsKeyDown(Eternal::InputHandle::BUTTON_B)) {
+                r -= 0.01f;
+            }
+
             static float x = 0,y = 0;
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_LEFT)) {
                 FOV_FACTOR += 5.0f;
             }
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_RIGHT)) {
-
+                myMesh.rotation.x += 0.01f;
+                myMesh.rotation.y += 0.01f;
+                myMesh.rotation.z += 0.01f;
             }
-
+/*
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_UP)) {
                 y--;
             }
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_DOWN)) {
                 y++;
-            }
+            }*/
+
 
 /*            myRenderer->SetColor(1,1,1,1);
             for(int i = 0; i < NUM_POINTS;i++) {
@@ -205,6 +348,6 @@ class App : public Eternal::Application {
 
 int main() {
     App p;
-    p.Start(0,0,320,240);
+    p.Start(0,0,WINDOW_W,WINDOW_H);
     return 0;
 }

@@ -11,6 +11,7 @@ struct face {
 
 struct triangle {
     vec3 points[3];
+    vec3 n;
 };
 
 #endif

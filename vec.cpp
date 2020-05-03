@@ -50,6 +50,18 @@ vec2 vec2_div(vec2 a, float scalar) {
     return v;
 }
 
+vec2 vec2_normalize(vec2 v) {
+    float mag = sqrtf((v.x * v.x) + (v.y * v.y));
+    vec2 n;
+    n.x /= mag;
+    n.y /= mag;
+    return n;
+}
+
+float vec2_dot(vec2 a, vec2 b) {
+    return (a.x * b.x) + (a.y * b.y);
+}
+
 float vec2_length(vec2 v) {
     return sqrtf((v.x * v.x) + (v.y * v.y));
 }
@@ -73,5 +85,29 @@ vec3 vec3_div(vec3 a, float scalar) {
     return v;
 }
 
+float vec3_dot(vec3 a, vec3 b) {
+    return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
+}
+
+vec3 vec3_cross(vec3 a, vec3 b) {
+    vec3 v = { 
+        //cx = aybz − azby
+        a.y * b.z - a.z * b.y,
+        //cy = azbx − axbz
+        a.z * b.x - a.x * b.z,
+        //cz = axby − aybx
+        a.x * b.y - a.y * b.x
+    };
+    return v;
+}
+
+vec3 vec3_normalize(vec3 v) {
+    float mag = (v.x * v.x) + (v.y * v.y) + (v.z * v.z);
+    vec3 n;
+    n.x /= mag;
+    n.y /= mag;
+    n.z /= mag;
+    return v;
+}
 
 
