@@ -63,12 +63,10 @@ void load_obj(std::string sfilename, mesh &myMesh) {
  //           else {
                 std::sscanf(sLine.c_str(), "f %d/%d %d/%d %d/%d", &f.a, &i, &f.b, &i, &f.c, &i);
 //            }
-            std::cout << f.a << " , " << f.b << " , " << f.c << std::endl;
             myMesh.faces.push_back(f);
         }
     }
 
     infile.close();
-    std::cout << "verts: " << myMesh.verts.size() << std::endl;
-    std::cout << "faces: " << myMesh.faces.size() << std::endl;
+
 }

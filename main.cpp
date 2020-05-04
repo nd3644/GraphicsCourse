@@ -57,7 +57,6 @@ face cube_faces[N_CUBE_FACES] = {
 };
 
 std::vector<triangle>triangles_to_render;
-
 class App : public Eternal::Application {
     public:
         static const int NUM_POINTS = 9*9*9;
@@ -103,7 +102,6 @@ class App : public Eternal::Application {
 
         void DrawTriangle(triangle t) {
             myRenderer->SetColor(0,0,1,1);
-
             DrawFilledTriangle(t.points[0].x, t.points[0].y,t.points[1].x, t.points[1].y,t.points[2].x, t.points[2].y);
         }
 
@@ -116,21 +114,23 @@ class App : public Eternal::Application {
             }
         }
 
+        // Called once on startup
         void OnInitialize() {
-            load_cube_data();
+//            load_cube_data();
             load_obj("data/cube.obj", myMesh);
-
-            vec3 a = { 2.5, 6.4, 3.0 };
-            vec3 b = { -2.2, 1.4, -1.0 };
-
-            std::cout << "a: " << vec3_length(a) << std::endl;
-            std::cout << "b: " << vec3_length(b) << std::endl;
         }
 
-        void OnUpdate() {
 
+        // Called once per frame
+        void OnUpdate() {
             if(myInputHandle->IsKeyTap(Eternal::InputHandle::KEY_ESCAPE)) {
                 exit(0);
+            }
+
+            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_RIGHT)) {
+                myMesh.rotation.x += 0.1f;
+                myMesh.rotation.y += 0.1f;
+                myMesh.rotation.z += 0.1f;
             }
 
             for(int i = 0;i < myMesh.faces.size();i++) {
@@ -252,6 +252,8 @@ class App : public Eternal::Application {
             fill_flat_bottom(x0, y0, x1, y1, mX, mY);
             fill_flat_top(x1, y1, mX, mY, x2, y2);
 
+
+            // This is just point and wireframe stuff
 /*            myRenderer->SetColor(1,1,1,1);
             myRenderer->DrawLine(x0, y0, x1, y1);
             myRenderer->DrawLine(x0, y0, x2, y2);
@@ -265,74 +267,10 @@ class App : public Eternal::Application {
 
             myRenderer->SetColor(0,0,1,1);
             myRenderer->PlotPoint(x2, y2);*/
-
-
         }
 
+        // Called once per frame
         void OnDraw() {
-
-            vec3 poots[3] = { { 32, 0 } , { 64, 100 }, {0, 64} }; 
-
-            static float fx = 300;
-            static float fy = 300;
-
-            static float r = 0;
-            for(int i = 0;i < 3;i++ ){
-                poots[i] = vec3_rotate_z(poots[i], r);
-                poots[i].x += fx;
-                poots[i].y += fy;
-            }
-
-            DrawFilledTriangle((int)poots[0].x, (int)poots[0].y, (int)poots[1].x, (int)poots[1].y, (int)poots[2].x, (int)poots[2].y); 
-
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_LEFT)) {
-                fx--;
-            }
-
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_RIGHT)) {
-                fx++;
-            }
-
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_UP)) {
-                fy--;
-            }
-
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_DOWN)) {
-                fy++;
-            }
-
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::BUTTON_A)) {
-                r += 0.01f;
-            }
-
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::BUTTON_B)) {
-                r -= 0.01f;
-            }
-
-            static float x = 0,y = 0;
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_LEFT)) {
-                FOV_FACTOR += 5.0f;
-            }
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_RIGHT)) {
-                myMesh.rotation.x += 0.01f;
-                myMesh.rotation.y += 0.01f;
-                myMesh.rotation.z += 0.01f;
-            }
-/*
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_UP)) {
-                y--;
-            }
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_DOWN)) {
-                y++;
-            }*/
-
-
-/*            myRenderer->SetColor(1,1,1,1);
-            for(int i = 0; i < NUM_POINTS;i++) {
-                myRenderer->SetColor(((float)(rand() % 255) / 255), ((float)(rand() % 255) / 255) , ((float)(rand() % 255) / 255), 1); 
-                myRenderer->PlotPoint(projected_points[i].x + (WINDOW_W / 2), projected_points[i].y + (WINDOW_H / 2));
-            }*/
-
             myRenderer->SetColor(1,1,0,1);
             for(int i = 0;i < triangles_to_render.size();i++) {
                 triangle t = triangles_to_render[i];
