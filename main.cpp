@@ -92,7 +92,7 @@ class App : public Eternal::Application {
             float x = x0;
             float y = y0;
             myRenderer->SetColor(0,0,1,1);
-            for(int i = 0;i < side_length;i++) {
+            for(int i = 0;i <= side_length;i++) {
                 myRenderer->PlotPoint((int)x,(int)y);
                 x += xinc;
                 y += yinc;
@@ -277,6 +277,7 @@ class App : public Eternal::Application {
 
                 DrawTriangle(t);
             }
+
             triangles_to_render.clear();
         }
 

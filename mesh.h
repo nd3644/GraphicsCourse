@@ -8,6 +8,9 @@
 #include <fstream>
 
 struct mesh {
+    mesh() {
+        rotation = { 0, 0, 0 };
+    }
     std::vector<vec3>verts;
     std::vector<face>faces;
     vec3 rotation;

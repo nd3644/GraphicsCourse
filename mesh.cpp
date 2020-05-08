@@ -50,23 +50,10 @@ void load_obj(std::string sfilename, mesh &myMesh) {
         }
         else if(tmp == "f") {
             int i = 0;
-            
-/*            if(obj_count_slashes(sLine) == 0) {
-                ss >> f.a;
-                ss >> f.b;
-                ss >> f.c;
-            }*/
-
-      //      else if(obj_contain_double_slash(sLine)) {
-     //           std::sscanf(sLine.c_str(), "f %d//%d %d//%d %d//%d", &f.a, &i, &f.b, &i, &f.c, &i);
-   //         }
- //           else {
-                std::sscanf(sLine.c_str(), "f %d/%d %d/%d %d/%d", &f.a, &i, &f.b, &i, &f.c, &i);
-//            }
+            std::sscanf(sLine.c_str(), "f %d/%d %d/%d %d/%d", &f.a, &i, &f.b, &i, &f.c, &i);
             myMesh.faces.push_back(f);
         }
     }
 
     infile.close();
-
 }
