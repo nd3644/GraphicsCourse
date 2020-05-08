@@ -37,23 +37,23 @@ vec3 cube_vertices[N_CUBE_VERTICES] = {
 const int N_CUBE_FACES = 6 * 2;
 face cube_faces[N_CUBE_FACES] = {
     // front
-    { .a = 1, .b = 2, .c = 3 },
-    { .a = 1, .b = 3, .c = 4 },
+    { .a = 1, .b = 2, .c = 3, .color = 0xFFFF0000 },
+    { .a = 1, .b = 3, .c = 4, .color = 0xFFFF0000 },
     // right
-    { .a = 4, .b = 3, .c = 5 },
-    { .a = 4, .b = 5, .c = 6 },
+    { .a = 4, .b = 3, .c = 5, .color = 0xFF00FF00 },
+    { .a = 4, .b = 5, .c = 6, .color = 0xFF00FF00 },
     // back
-    { .a = 6, .b = 5, .c = 7 },
-    { .a = 6, .b = 7, .c = 8 },
+    { .a = 6, .b = 5, .c = 7 , .color = 0xFF0000FF },
+    { .a = 6, .b = 7, .c = 8 , .color = 0xFF0000FF },
     // left
-    { .a = 8, .b = 7, .c = 2 },
-    { .a = 8, .b = 2, .c = 1 },
+    { .a = 8, .b = 7, .c = 2 , .color = 0xFF0FF000},
+    { .a = 8, .b = 2, .c = 1 , .color = 0xFF0FF000},
     // top
-    { .a = 2, .b = 7, .c = 5 },
-    { .a = 2, .b = 5, .c = 3 },
+    { .a = 2, .b = 7, .c = 5 , .color = 0xFF0000FF},
+    { .a = 2, .b = 5, .c = 3, .color = 0xFF0000FF},
     // bottom
-    { .a = 6, .b = 8, .c = 1 },
-    { .a = 6, .b = 1, .c = 4 }
+    { .a = 6, .b = 8, .c = 1, .color = 0xFF0000FF},
+    { .a = 6, .b = 1, .c = 4, .color = 0xFF0000FF}
 };
 
 std::vector<triangle>triangles_to_render;
@@ -91,7 +91,6 @@ class App : public Eternal::Application {
 
             float x = x0;
             float y = y0;
-            myRenderer->SetColor(0,0,1,1);
             for(int i = 0;i <= side_length;i++) {
                 myRenderer->PlotPoint((int)x,(int)y);
                 x += xinc;
@@ -101,7 +100,11 @@ class App : public Eternal::Application {
 
 
         void DrawTriangle(triangle t) {
-            myRenderer->SetColor(0,0,1,1);
+
+            int r = (t.color >> 16) & 0xFF;
+            int g = (t.color >> 8) & 0xFF;
+            int b = (t.color) & 0xFF;
+            myRenderer->SetColor((float)r / 255.0f, (float)g / 255.0f, (float)b  / 255.0f, 1);
             DrawFilledTriangle(t.points[0].x, t.points[0].y,t.points[1].x, t.points[1].y,t.points[2].x, t.points[2].y);
         }
 
@@ -116,13 +119,15 @@ class App : public Eternal::Application {
 
         // Called once on startup
         void OnInitialize() {
-//            load_cube_data();
-            load_obj("data/cube.obj", myMesh);
+            load_cube_data();
+//            load_obj("data/cube.obj", myMesh);
         }
 
 
         // Called once per frame
         void OnUpdate() {
+
+
             if(myInputHandle->IsKeyTap(Eternal::InputHandle::KEY_ESCAPE)) {
                 exit(0);
             }
@@ -142,6 +147,7 @@ class App : public Eternal::Application {
                 face_verts[2] = myMesh.verts[mesh_face.c-1];
 
                 triangle t;
+                t.color = mesh_face.color;
                 vec3 transformed_verts[3];  
                 for(int j = 0;j < 3;j++) {
                     vec3 point = face_verts[j];
@@ -198,7 +204,6 @@ class App : public Eternal::Application {
 
             float startX = x0;
             float endX = x0;
-            myRenderer->SetColor(0,0,1,1);
             for(int y = y0;y <= y2;y++) {
                 DrawLine(startX, y, endX, y);
                 startX += slope1;
@@ -212,7 +217,6 @@ class App : public Eternal::Application {
 
             float startX = x2;
             float endX = x2;
-            myRenderer->SetColor(0,0,1,1);
             for(int y = y2;y >= y0;y--) {
                 DrawLine(startX, y, endX, y);
                 startX -= slope1;
