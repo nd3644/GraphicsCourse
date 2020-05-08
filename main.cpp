@@ -172,7 +172,7 @@ class App : public Eternal::Application {
 
                 vec3 camera_ray = vec3_sub(vCamera, transformed_verts[0]);
                 if(vec3_dot(camera_ray, n) < 0) {
-                    continue;
+            //        continue;
                 }
 
                 for(int j = 0;j < 3;j++) {
@@ -275,9 +275,15 @@ class App : public Eternal::Application {
 
         // Called once per frame
         void OnDraw() {
-            myRenderer->SetColor(1,1,0,1);
+
+            std::vector<int>indices;
             for(int i = 0;i < triangles_to_render.size();i++) {
-                triangle t = triangles_to_render[i];
+                indices.push_back(i);
+            }
+
+            myRenderer->SetColor(1,1,0,1);
+            for(int i = 0;i < indices.size();i++) {
+                triangle t = triangles_to_render[indices[i]];
 
                 DrawTriangle(t);
             }
