@@ -7,8 +7,8 @@
 
 float FOV_FACTOR = 640.0;
 
-const int WINDOW_W = 320;
-const int WINDOW_H = 240;
+const int WINDOW_W = 320/2;
+const int WINDOW_H = 240/2;
 
 const int N_CUBE_VERTICES = 8;
 /*vec3 mesh_vertices[N_MESH_VERTICES] = { 
@@ -75,7 +75,7 @@ class App : public Eternal::Application {
             vec3 newVec = {
                             ((FOV_FACTOR * v.x) + 0) / v.z,
                             ((FOV_FACTOR * v.y) + 0) / v.z,
-                            0 };
+                            v.z };
 
             return newVec;
         }
@@ -98,7 +98,6 @@ class App : public Eternal::Application {
             }
         }
 
-
         void DrawTriangle(triangle t) {
 
             int r = (t.color >> 16) & 0xFF;
@@ -119,6 +118,12 @@ class App : public Eternal::Application {
 
         // Called once on startup
         void OnInitialize() {
+
+            srand(time(0));
+            for(int i = 0;i < 128;i++) {
+                arr.push_back(rand() % 128);
+            }
+
             load_cube_data();
 //            load_obj("data/cube.obj", myMesh);
         }
@@ -126,7 +131,7 @@ class App : public Eternal::Application {
 
         // Called once per frame
         void OnUpdate() {
-
+            return;
 
             if(myInputHandle->IsKeyTap(Eternal::InputHandle::KEY_ESCAPE)) {
                 exit(0);
@@ -160,6 +165,8 @@ class App : public Eternal::Application {
 
                     transformed_verts[j] = point;
                 }
+                t.avg_z = (t.points[0].z + t.points[1].z + t.points[2].z) / 3.0f;
+                
 
                 vec3 ba = vec3_sub(transformed_verts[1], transformed_verts[0]);
                 ba = vec3_normalize(ba);
@@ -189,6 +196,13 @@ class App : public Eternal::Application {
                 t.n.y += WINDOW_H / 2;
                 triangles_to_render.push_back(t);
             }
+
+
+/*            for(int i = 0;i < triangles_to_render.size()-1;i++) {
+                if(triangles_to_render[i].avg_z > triangles_to_render[i+1]) {
+                    std::swap(triangles_to_render[i].avg_z, triangles_to_render[i+1].avg_z);
+                }
+            }*/
         }
 
         float GetLineSlope(float x, float y, float x1, float y1) {
@@ -273,17 +287,59 @@ class App : public Eternal::Application {
             myRenderer->PlotPoint(x2, y2);*/
         }
 
+        std::vector<int>arr;
         // Called once per frame
         void OnDraw() {
 
-            std::vector<int>indices;
-            for(int i = 0;i < triangles_to_render.size();i++) {
-                indices.push_back(i);
+            static bool started = false;
+            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_SPACE)) {
+                started = true;
+            }
+
+            float f2 = 0;
+            for(int i = 0;i < arr.size();i++) {
+                float f = 0.1f;
+                f2 += 0.01f;
+                for(int j = WINDOW_H;j > WINDOW_H - arr[i];j--) {
+                    f += 0.01f;
+                    myRenderer->SetColor(f,f2,f,1);
+                    myRenderer->PlotPoint(i, j);
+                }
+            }
+
+
+            static int i = 0;
+            static int j = 0;
+            const int sorts_per_frame = (started == true) ? 1 : 0;
+            for(int c = 0; c < sorts_per_frame;c++) {
+                if(i < arr.size()-1) {
+                    if(j < arr.size()-i-1) {
+                        if(arr[j] > arr[j+1]) {
+                            std::swap(arr[j], arr[j+1]);
+                            for(int l = WINDOW_H;l > WINDOW_H - arr[i];l--) {
+                                float v = (float)arr[i] / 128.0f;
+                                myRenderer->SetColor(1,1,1,1);
+//                                myRenderer->PlotPoint(j, l);
+                            }
+                        }
+                        j++;
+                    }
+                    else {
+                        i++;
+                        j = 0;
+                    }
+                }
+            }
+
+            return;
+
+            for(int i = 0;i < WINDOW_W * WINDOW_H;i++) {
+                depthBuffer[i] = 1000.0f;
             }
 
             myRenderer->SetColor(1,1,0,1);
-            for(int i = 0;i < indices.size();i++) {
-                triangle t = triangles_to_render[indices[i]];
+            for(int i = 0;i < triangles_to_render.size();i++) {
+                triangle t = triangles_to_render[i];
 
                 DrawTriangle(t);
             }
@@ -291,6 +347,7 @@ class App : public Eternal::Application {
             triangles_to_render.clear();
         }
 
+        float depthBuffer[WINDOW_W * WINDOW_H];
 
     private:
 };
