@@ -10,6 +10,10 @@ struct vec3 {
     float x, y, z;
 };
 
+struct vec4 {
+    float x, y, z, w;
+};
+
 vec3 vec3_rotate_x(vec3 v, float angle);
 vec3 vec3_rotate_y(vec3 v, float angle);
 vec3 vec3_rotate_z(vec3 v, float angle);
@@ -31,6 +35,10 @@ vec3 vec3_div(vec3 a, float scalar);
 vec3 vec3_cross(vec3 a, vec3 b);
 vec3 vec3_normalize(vec3 v);
 float vec3_dot(vec3 a, vec3 b);
+
+
+vec4 vec4_from_vec3(vec3 v);
+vec3 vec3_from_vec4(vec4 v);
 
 
 #endif

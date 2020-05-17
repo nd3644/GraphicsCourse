@@ -4,11 +4,12 @@
 #include "vec.h"
 #include "triangle.h"
 #include "mesh.h"
+#include "matrix.h"
 
 float FOV_FACTOR = 640.0;
 
-const int WINDOW_W = 320/2;
-const int WINDOW_H = 240/2;
+const int WINDOW_W = 320;
+const int WINDOW_H = 240;
 
 const int N_CUBE_VERTICES = 8;
 /*vec3 mesh_vertices[N_MESH_VERTICES] = { 
@@ -118,12 +119,6 @@ class App : public Eternal::Application {
 
         // Called once on startup
         void OnInitialize() {
-
-            srand(time(0));
-            for(int i = 0;i < 128;i++) {
-                arr.push_back(rand() % 128);
-            }
-
             load_cube_data();
 //            load_obj("data/cube.obj", myMesh);
         }
@@ -131,7 +126,6 @@ class App : public Eternal::Application {
 
         // Called once per frame
         void OnUpdate() {
-            return;
 
             if(myInputHandle->IsKeyTap(Eternal::InputHandle::KEY_ESCAPE)) {
                 exit(0);
@@ -143,6 +137,17 @@ class App : public Eternal::Application {
                 myMesh.rotation.z += 0.1f;
             }
 
+            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_LEFT)) {
+                myMesh.scale.x += 0.002;
+                myMesh.scale.y += 0.002;
+            }
+
+            mat4_t scale_matrix = mat4_make_scale(myMesh.scale.x, myMesh.scale.y, myMesh.scale.z);
+            mat4_t translation_matrix = mat4_make_translation(myMesh.translation.x, myMesh.translation.y, myMesh.translation.z);
+
+            mat4_t rotation_x_matrix = mat4_make_rotation_x(myMesh.rotation.x);
+            mat4_t rotation_y_matrix = mat4_make_rotation_y(myMesh.rotation.y);
+            mat4_t rotation_z_matrix = mat4_make_rotation_z(myMesh.rotation.z);
             for(int i = 0;i < myMesh.faces.size();i++) {
                 face mesh_face = myMesh.faces[i];
 
@@ -155,17 +160,21 @@ class App : public Eternal::Application {
                 t.color = mesh_face.color;
                 vec3 transformed_verts[3];  
                 for(int j = 0;j < 3;j++) {
-                    vec3 point = face_verts[j];
+                    vec4 point = vec4_from_vec3(face_verts[j]);
+                    // todo: use a matrix to scale our original vertex
+                    // TODO: multiply the scale matrix by the vertex
 
-                    point = vec3_rotate_x(point, myMesh.rotation.x);
-                    point = vec3_rotate_y(point, myMesh.rotation.y);
-                    point = vec3_rotate_z(point, myMesh.rotation.z);
-
+                    point = mat4_mul_vec4(rotation_x_matrix, point);
+                    point = mat4_mul_vec4(rotation_y_matrix, point);
+                    point = mat4_mul_vec4(rotation_z_matrix, point);
+                    point = mat4_mul_vec4(translation_matrix, point);
+                    point = mat4_mul_vec4(scale_matrix, point);
                     point.z -= vCamera.z;
 
-                    transformed_verts[j] = point;
+                    transformed_verts[j] = vec3_from_vec4(point);
+                    t.avg_z += point.z;
                 }
-                t.avg_z = (t.points[0].z + t.points[1].z + t.points[2].z) / 3.0f;
+                t.avg_z /= 3;
                 
 
                 vec3 ba = vec3_sub(transformed_verts[1], transformed_verts[0]);
@@ -179,7 +188,7 @@ class App : public Eternal::Application {
 
                 vec3 camera_ray = vec3_sub(vCamera, transformed_verts[0]);
                 if(vec3_dot(camera_ray, n) < 0) {
-            //        continue;
+                    continue;
                 }
 
                 for(int j = 0;j < 3;j++) {
@@ -198,11 +207,13 @@ class App : public Eternal::Application {
             }
 
 
-/*            for(int i = 0;i < triangles_to_render.size()-1;i++) {
-                if(triangles_to_render[i].avg_z > triangles_to_render[i+1]) {
-                    std::swap(triangles_to_render[i].avg_z, triangles_to_render[i+1].avg_z);
+            for(int i = 0;i < triangles_to_render.size()-1;i++) {
+                for(int j = 0;j < triangles_to_render.size()-i-1;j++) {
+                    if(triangles_to_render[j].avg_z < triangles_to_render[j+1].avg_z) {
+                        std::swap(triangles_to_render[j], triangles_to_render[j+1]);
+                    }
                 }
-            }*/
+            }
         }
 
         float GetLineSlope(float x, float y, float x1, float y1) {
@@ -287,51 +298,8 @@ class App : public Eternal::Application {
             myRenderer->PlotPoint(x2, y2);*/
         }
 
-        std::vector<int>arr;
         // Called once per frame
         void OnDraw() {
-
-            static bool started = false;
-            if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_SPACE)) {
-                started = true;
-            }
-
-            float f2 = 0;
-            for(int i = 0;i < arr.size();i++) {
-                float f = 0.1f;
-                f2 += 0.01f;
-                for(int j = WINDOW_H;j > WINDOW_H - arr[i];j--) {
-                    f += 0.01f;
-                    myRenderer->SetColor(f,f2,f,1);
-                    myRenderer->PlotPoint(i, j);
-                }
-            }
-
-
-            static int i = 0;
-            static int j = 0;
-            const int sorts_per_frame = (started == true) ? 1 : 0;
-            for(int c = 0; c < sorts_per_frame;c++) {
-                if(i < arr.size()-1) {
-                    if(j < arr.size()-i-1) {
-                        if(arr[j] > arr[j+1]) {
-                            std::swap(arr[j], arr[j+1]);
-                            for(int l = WINDOW_H;l > WINDOW_H - arr[i];l--) {
-                                float v = (float)arr[i] / 128.0f;
-                                myRenderer->SetColor(1,1,1,1);
-//                                myRenderer->PlotPoint(j, l);
-                            }
-                        }
-                        j++;
-                    }
-                    else {
-                        i++;
-                        j = 0;
-                    }
-                }
-            }
-
-            return;
 
             for(int i = 0;i < WINDOW_W * WINDOW_H;i++) {
                 depthBuffer[i] = 1000.0f;

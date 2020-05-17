@@ -110,4 +110,13 @@ vec3 vec3_normalize(vec3 v) {
     return v;
 }
 
+vec4 vec4_from_vec3(vec3 v) {
+    vec4 vNew = { .x = v.x, .y = v.y, .z = v.z, .w = 1 };
+    return vNew;
+}
+
+vec3 vec3_from_vec4(vec4 v) {
+    vec3 vNew = { .x = v.x, .y = v.y, .z = v.z };
+    return vNew;
+}
 
