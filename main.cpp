@@ -5,11 +5,12 @@
 #include "triangle.h"
 #include "mesh.h"
 #include "matrix.h"
+#include "light.h"
 
 float FOV_FACTOR = 640.0;
 
-const int WINDOW_W = 320;
-const int WINDOW_H = 240;
+const int WINDOW_W = 1024;
+const int WINDOW_H = 768;
 
 const int N_CUBE_VERTICES = 8;
 /*vec3 mesh_vertices[N_MESH_VERTICES] = { 
@@ -38,6 +39,28 @@ vec3 cube_vertices[N_CUBE_VERTICES] = {
 const int N_CUBE_FACES = 6 * 2;
 face cube_faces[N_CUBE_FACES] = {
     // front
+    { .a = 1, .b = 2, .c = 3, .color = 0xFFFFFFFF },
+    { .a = 1, .b = 3, .c = 4, .color = 0xFFFFFFFF },
+    // right
+    { .a = 4, .b = 3, .c = 5, .color = 0xFFFFFFFF },
+    { .a = 4, .b = 5, .c = 6, .color = 0xFFFFFFFF },
+    // back
+    { .a = 6, .b = 5, .c = 7 , .color = 0xFFFFFFFF },
+    { .a = 6, .b = 7, .c = 8 , .color = 0xFFFFFFFF },
+    // left
+    { .a = 8, .b = 7, .c = 2 , .color = 0xFFFFFFFF},
+    { .a = 8, .b = 2, .c = 1 , .color = 0xFFFFFFFF},
+    // top
+    { .a = 2, .b = 7, .c = 5 , .color = 0xFFFFFFFF},
+    { .a = 2, .b = 5, .c = 3, .color = 0xFFFFFFFF},
+    // bottom
+    { .a = 6, .b = 8, .c = 1, .color = 0xFFFFFFFF},
+    { .a = 6, .b = 1, .c = 4, .color = 0xFFFFFFFF}
+};
+
+/*
+face cube_faces[N_CUBE_FACES] = {
+    // front
     { .a = 1, .b = 2, .c = 3, .color = 0xFFFF0000 },
     { .a = 1, .b = 3, .c = 4, .color = 0xFFFF0000 },
     // right
@@ -57,6 +80,8 @@ face cube_faces[N_CUBE_FACES] = {
     { .a = 6, .b = 1, .c = 4, .color = 0xFF0000FF}
 };
 
+*/
+
 std::vector<triangle>triangles_to_render;
 class App : public Eternal::Application {
     public:
@@ -64,7 +89,10 @@ class App : public Eternal::Application {
         vec3 cube_points[NUM_POINTS];
         vec3 projected_points[NUM_POINTS];
         vec3 vCamera = { 0, 0, -20 };
+        mat4_t proj_matrix;
         mesh myMesh;
+
+        light_t ambientLight;
 
         App() {
         }
@@ -72,14 +100,29 @@ class App : public Eternal::Application {
 
         }
 
-        vec3 Project(vec3 v) {
+        vec3 cameraPos;
+
+        uint32_t light_apply_intensity(uint32_t c, float factor) {
+            if(factor < 0) {
+                factor = 0;
+            }
+            uint32_t a = (c & 0xFF000000);
+            uint32_t r = (c & 0x00FF0000) * factor;
+            uint32_t g = (c & 0x0000FF00) * factor;
+            uint32_t b = (c & 0x000000FF) * factor;
+
+            uint32_t new_color = a | (r & 0x00FF0000) | (g & 0x0000FF00) | (b & 0x000000FF);
+            return new_color;
+        }
+
+/*        vec3 Project(vec3 v) {
             vec3 newVec = {
                             ((FOV_FACTOR * v.x) + 0) / v.z,
                             ((FOV_FACTOR * v.y) + 0) / v.z,
                             v.z };
 
             return newVec;
-        }
+        }*/
 
         void DrawLine(int x0, int y0, int x2, int y2) {
             int delta_x = x2 - x0;
@@ -101,6 +144,18 @@ class App : public Eternal::Application {
 
         void DrawTriangle(triangle t) {
 
+/*
+            Eternal::Triangle tri;
+            tri.v[0].x = t.points[0].x;
+            tri.v[1].x = t.points[1].x;
+            tri.v[2].x = t.points[2].x;
+
+            tri.v[0].y = t.points[0].y;
+            tri.v[1].y = t.points[1].y;
+            tri.v[2].y = t.points[2].y;
+            myRenderer->DrawTriangle(tri);
+            return;*/
+
             int r = (t.color >> 16) & 0xFF;
             int g = (t.color >> 8) & 0xFF;
             int b = (t.color) & 0xFF;
@@ -115,12 +170,33 @@ class App : public Eternal::Application {
             for(int i = 0;i < N_CUBE_VERTICES;i++) {
                 myMesh.verts.push_back(cube_vertices[i]);
             }
+
+            save_cube_data();
+        }
+
+        void save_cube_data() {
+            std::ofstream out("cube.txt");
+            out << N_CUBE_VERTICES << std::endl;
+            out << N_CUBE_FACES << std::endl;
+            for(int i = 0;i < N_CUBE_VERTICES;i++) {
+                out << "v " << cube_vertices[i].x << " " << cube_vertices[i].y << " " << cube_vertices[i].z << std::endl;
+            }
+            for(int i = 0;i < N_CUBE_FACES;i++) {
+                out << "f " << cube_faces[i].a << " " << cube_faces[i].b << " " << cube_faces[i].c << std::endl;
+            }
+            out.close();
         }
 
         // Called once on startup
         void OnInitialize() {
             load_cube_data();
-//            load_obj("data/cube.obj", myMesh);
+            load_obj("data/f22.obj", myMesh);
+            printf("---loaded\n");
+
+            float fov = M_PI / 3.0;
+            proj_matrix = mat4_make_perspective(1.0472f/2, (float)WINDOW_H / (float)WINDOW_W, 1, 50);
+
+            ambientLight.direction = { 0, 0, 1 };
         }
 
 
@@ -132,14 +208,11 @@ class App : public Eternal::Application {
             }
 
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_RIGHT)) {
-                myMesh.rotation.x += 0.1f;
-                myMesh.rotation.y += 0.1f;
-                myMesh.rotation.z += 0.1f;
+
             }
 
             if(myInputHandle->IsKeyDown(Eternal::InputHandle::KEY_LEFT)) {
-                myMesh.scale.x += 0.002;
-                myMesh.scale.y += 0.002;
+                myMesh.translation.z -= 0.05f;
             }
 
             mat4_t scale_matrix = mat4_make_scale(myMesh.scale.x, myMesh.scale.y, myMesh.scale.z);
@@ -164,11 +237,18 @@ class App : public Eternal::Application {
                     // todo: use a matrix to scale our original vertex
                     // TODO: multiply the scale matrix by the vertex
 
-                    point = mat4_mul_vec4(rotation_x_matrix, point);
+/*                    point = mat4_mul_vec4(rotation_x_matrix, point);
                     point = mat4_mul_vec4(rotation_y_matrix, point);
                     point = mat4_mul_vec4(rotation_z_matrix, point);
                     point = mat4_mul_vec4(translation_matrix, point);
-                    point = mat4_mul_vec4(scale_matrix, point);
+                    point = mat4_mul_vec4(scale_matrix, point);*/
+                    mat4_t worldMatrix = mat4_idenity();
+                    //worldMatrix = mat4_mul_mat4(worldMatrix, scale_matrix);
+                    worldMatrix = mat4_mul_mat4(worldMatrix, translation_matrix);
+                    worldMatrix = mat4_mul_mat4(worldMatrix, rotation_z_matrix);
+                    worldMatrix = mat4_mul_mat4(worldMatrix, rotation_y_matrix);
+                    worldMatrix = mat4_mul_mat4(worldMatrix, rotation_x_matrix);
+                    point = mat4_mul_vec4(worldMatrix, point);
                     point.z -= vCamera.z;
 
                     transformed_verts[j] = vec3_from_vec4(point);
@@ -187,20 +267,37 @@ class App : public Eternal::Application {
                 t.n = n;
 
                 vec3 camera_ray = vec3_sub(vCamera, transformed_verts[0]);
+                
                 if(vec3_dot(camera_ray, n) < 0) {
                     continue;
                 }
 
+                // Apply lighting
+//                std::cout << vec3_dot(ambientLight.direction, n) << std::endl;
+                float intensity = vec3_dot(ambientLight.direction, n) * -1;
+
+                t.color = light_apply_intensity(t.color, intensity);
+
                 for(int j = 0;j < 3;j++) {
                     vec3 point = transformed_verts[j];
 
-                    point = Project(point);
+//                    point = Project(point);
+
+                    vec4 result = mat4_mul_vec4_project(proj_matrix, vec4_from_vec3(point));
+
+                    point = vec3_from_vec4(result);
+
+                    point.x *= (WINDOW_W / 2.0);
+                    point.y *= (WINDOW_H / 2.0);
+
+                    point.y *= -1;
+
                     point.x += WINDOW_W / 2;
                     point.y += WINDOW_H / 2;
 
                     t.points[j] = point;
                 }
-                t.n = Project(t.n);
+                t.n = vec3_from_vec4(mat4_mul_vec4_project(proj_matrix, vec4_from_vec3(t.n)));
                 t.n.x += WINDOW_W / 2;
                 t.n.y += WINDOW_H / 2;
                 triangles_to_render.push_back(t);

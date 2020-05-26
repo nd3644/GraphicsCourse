@@ -102,12 +102,12 @@ vec3 vec3_cross(vec3 a, vec3 b) {
 }
 
 vec3 vec3_normalize(vec3 v) {
-    float mag = (v.x * v.x) + (v.y * v.y) + (v.z * v.z);
+    float mag = sqrtf((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
     vec3 n;
     n.x /= mag;
     n.y /= mag;
     n.z /= mag;
-    return v;
+    return n;
 }
 
 vec4 vec4_from_vec3(vec3 v) {
